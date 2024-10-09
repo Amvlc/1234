@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.http import Http404
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -28,14 +29,10 @@ class PostDetailView(DetailView):
     template_name = "blog/detail.html"
 
     def get_object(self, queryset=None):
-        filter_published = self.request.user != self.object.author
-        return get_object_or_404(
-            get_post_queryset(
-                filter_published=filter_published,
-                annotate_comments=False,
-            ),
-            pk=self.kwargs["post_id"],
-        )
+        obj = super().get_object(queryset)
+        if self.request.user != obj.author and not obj.is_published:
+            raise Http404
+        return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -44,6 +41,11 @@ class PostDetailView(DetailView):
         ).select_related("author")
         context["form"] = CommentForm()
         return context
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            return Post.objects.all()
+        return Post.objects.filter(is_published=True)
 
 
 class CategoryPostListView(ListView):
