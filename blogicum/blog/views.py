@@ -29,10 +29,24 @@ class PostDetailView(DetailView):
     template_name = "blog/detail.html"
 
     def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        if self.request.user != obj.author and not obj.is_published:
-            raise Http404
-        return obj
+        post = get_object_or_404(
+            get_post_queryset(
+                filter_published=False,
+                annotate_comments=False,
+            ),
+            pk=self.kwargs["post_id"],
+        )
+        if post.author != self.request.user:
+            post = get_object_or_404(
+                get_post_queryset(
+                    filter_published=True,
+                    annotate_comments=False,
+                ),
+                pk=self.kwargs["post_id"],
+            )
+        if not post:
+            raise Http404("Post not found")
+        return post
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -41,11 +55,6 @@ class PostDetailView(DetailView):
         ).select_related("author")
         context["form"] = CommentForm()
         return context
-
-    def get_queryset(self):
-        if self.request.user.is_authenticated:
-            return Post.objects.all()
-        return Post.objects.filter(is_published=True)
 
 
 class CategoryPostListView(ListView):
