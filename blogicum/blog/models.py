@@ -102,6 +102,9 @@ class Post(CommonInfo):
         verbose_name="Категория",
         related_name="posts",
     )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default="draft"
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлено")
     image = models.ImageField(upload_to="post_images/", blank=True, null=True)
 

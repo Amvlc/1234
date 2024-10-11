@@ -34,8 +34,9 @@ class PostDetailView(DetailView):
                 filter_published=False,
                 annotate_comments=False,
             ),
-            pk=self.kwargs["post_id"],
+            pk=self.kwargs["post_id"],  
         )
+
         if post.author != self.request.user:
             post = get_object_or_404(
                 get_post_queryset(
@@ -44,8 +45,9 @@ class PostDetailView(DetailView):
                 ),
                 pk=self.kwargs["post_id"],
             )
-        if not post:
-            raise Http404("Post not found")
+            if not post:
+                raise Http404("Post not found")
+
         return post
 
     def get_context_data(self, **kwargs):
